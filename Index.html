@@ -1,0 +1,43 @@
+import os
+import time
+import shutil
+from datetime import datetime, timedelta
+
+# --- CONFIGURATION ---
+CAM_FOLDERS = ["Kitchen_01", "Yard_02", "Driveway_03", "Side_04", "Back_05", "Entry_06", "Dungeon_69", "Spare_08"]
+BASE_PATH = "C:/Security_Base/"
+BURN_PILE = "C:/The_Zoo/"
+PRIORITY_DIR = "C:/Priority_HD/"
+MOTION_THRESHOLD = 0.05  # 5% Pixel Change
+BUFFER_MINS = 15
+
+def manager_check_agents():
+    """Checks if cameras are 'reporting' (sending files)."""
+    # Logic: If no new file in 5 mins, flag as 'Out of Fuel'
+    pass
+
+def zookeeper_decision(file_path):
+    """Decides if a file is Priority or 72-hour Safe."""
+    # Logic: Uses OpenCV to check for > 5% motion
+    # If Motion: Move to PRIORITY_DIR + 15min buffer
+    # Else: Move to BASE_PATH (The 72-hour hold)
+    pass
+
+def the_5am_spark():
+    """Handles the 4:30 AM Bus and 5:00 AM Burn."""
+    now = datetime.now()
+    if now.hour == 4 and now.minute == 30:
+        # Move files older than 72 hours to BURN_PILE
+        print("Bus is loading for the Zoo...")
+        
+    if now.hour == 5 and now.minute == 0:
+        # Wipe the BURN_PILE
+        shutil.rmtree(BURN_PILE)
+        os.makedirs(BURN_PILE)
+        print("The Zoo has been sparked. Ground clear.")
+
+# --- MAIN LOOP ---
+while True:
+    manager_check_agents()
+    the_5am_spark()
+    time.sleep(60)
