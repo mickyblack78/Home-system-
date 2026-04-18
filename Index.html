@@ -1,43 +1,127 @@
-import os
-import time
-import shutil
-from datetime import datetime, timedelta
-
-# --- CONFIGURATION ---
-CAM_FOLDERS = ["Kitchen_01", "Yard_02", "Driveway_03", "Side_04", "Back_05", "Entry_06", "Dungeon_69", "Spare_08"]
-BASE_PATH = "C:/Security_Base/"
-BURN_PILE = "C:/The_Zoo/"
-PRIORITY_DIR = "C:/Priority_HD/"
-MOTION_THRESHOLD = 0.05  # 5% Pixel Change
-BUFFER_MINS = 15
-
-def manager_check_agents():
-    """Checks if cameras are 'reporting' (sending files)."""
-    # Logic: If no new file in 5 mins, flag as 'Out of Fuel'
-    pass
-
-def zookeeper_decision(file_path):
-    """Decides if a file is Priority or 72-hour Safe."""
-    # Logic: Uses OpenCV to check for > 5% motion
-    # If Motion: Move to PRIORITY_DIR + 15min buffer
-    # Else: Move to BASE_PATH (The 72-hour hold)
-    pass
-
-def the_5am_spark():
-    """Handles the 4:30 AM Bus and 5:00 AM Burn."""
-    now = datetime.now()
-    if now.hour == 4 and now.minute == 30:
-        # Move files older than 72 hours to BURN_PILE
-        print("Bus is loading for the Zoo...")
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Notepad</title>
+    <style>
+        body { background-color: #000; color: #0f0; font-family: monospace; padding: 20px; }
+        #editor { width: 100%; height: 70vh; background: #050505; color: #0f0; border: 1px solid #333; padding: 10px; font-size: 16px; outline: none; }
+        #filename { background: #111; color: #0f0; border: 1px solid #333; padding: 5px; margin-bottom: 10px; width: 200px; }
+        .controls { margin-top: 10px; display: flex; gap: 10px; }
+        button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px 15px; cursor: pointer; }
         
-    if now.hour == 5 and now.minute == 0:
-        # Wipe the BURN_PILE
-        shutil.rmtree(BURN_PILE)
-        os.makedirs(BURN_PILE)
-        print("The Zoo has been sparked. Ground clear.")
+        /* 3. Naming Highlight (Red Pulse) */
+        @keyframes redPulse {
+            0% { border: 1px solid #500; box-shadow: 0 0 2px #500; }
+            50% { border: 1px solid #f00; box-shadow: 0 0 10px #f00; }
+            100% { border: 1px solid #500; box-shadow: 0 0 2px #500; }
+        }
+        .pulse-active { animation: redPulse 1.5s infinite !important; }
 
-# --- MAIN LOOP ---
-while True:
-    manager_check_agents()
-    the_5am_spark()
-    time.sleep(60)
+        /* Choice Toggle Styles */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #222; border: 1px solid #0f0; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: #0f0; transition: .4s; }
+        input:checked + .slider:before { transform: translateX(20px); }
+    </style>
+</head>
+<body>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <label class="switch">
+            <input type="checkbox" id="storage-toggle">
+            <span class="slider"></span>
+        </label>
+        <span id="toggle-label" style="font-size: 12px;">PHONE</span>
+
+        <select id="saved-list" style="background: #111; color: #0f0; border: 1px solid #444; flex-grow: 1;"></select>
+        
+        <button id="run-btn">RUN</button>
+    </div>
+
+    <input type="text" id="filename" placeholder="filename.txt">
+    <textarea id="editor" placeholder="Write here..."></textarea>
+
+    <div class="controls">
+        <button onclick="handleGlobalSave()">SAVE</button>
+    </div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const filenameInput = document.getElementById('filename');
+        const storageToggle = document.getElementById('storage-toggle');
+        const savedList = document.getElementById('saved-list');
+
+        // Existing Save Logic (Phone)
+        function saveFile() {
+            const text = editor.value;
+            const name = filenameInput.value || "note.txt";
+            const blob = new Blob([text], { type: "text/plain" });
+            const anchor = document.createElement("a");
+            anchor.download = name;
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
+        }
+
+        /* --- New Functional Blocks Inserted Below --- */
+
+        // 3. Highlight Logic
+        function checkNaming() {
+            filenameInput.classList.toggle('pulse-active', !filenameInput.value.trim());
+        }
+        filenameInput.addEventListener('input', checkNaming);
+
+        // 1. Toggle Label
+        storageToggle.addEventListener('change', () => {
+            document.getElementById('toggle-label').innerText = storageToggle.checked ? "APP" : "PHONE";
+        });
+
+        // 4. Run Logic
+        document.getElementById('run-btn').addEventListener('click', () => {
+            const blob = new Blob([editor.value], { type: 'text/html' });
+            window.open(URL.createObjectURL(blob), '_blank');
+        });
+
+        // 2 & 5. Storage Logic
+        function syncHistory(name, content) {
+            let history = JSON.parse(localStorage.getItem('app_history') || '[]');
+            history = [{name, content, ts: Date.now()}, ...history.filter(i => i.name !== name)];
+            localStorage.setItem('app_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            let history = JSON.parse(localStorage.getItem('app_history') || '[]');
+            savedList.innerHTML = '<option value="">-- Recent History --</option>';
+            history.forEach(item => {
+                let opt = new Option(item.name, item.name);
+                savedList.add(opt);
+            });
+        }
+
+        savedList.addEventListener('change', () => {
+            let history = JSON.parse(localStorage.getItem('app_history') || '[]');
+            let entry = history.find(i => i.name === savedList.value);
+            if (entry) {
+                editor.value = entry.content;
+                filenameInput.value = entry.name;
+                checkNaming();
+            }
+        });
+
+        // Master Save Hook
+        window.handleGlobalSave = function() {
+            if (storageToggle.checked) {
+                syncHistory(filenameInput.value || "Untitled", editor.value);
+            } else {
+                saveFile();
+            }
+        };
+
+        // Initialize
+        renderHistory();
+        checkNaming();
+    </script>
+</body>
+</html>
