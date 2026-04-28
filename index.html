@@ -2,49 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sovereign Notepad</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Notepad.exe.wtf.</title>
     <style>
-        body { background-color: #000; color: #0f0; font-family: monospace; padding: 20px; }
-        #editor { width: 100%; height: 70vh; background: #050505; color: #0f0; border: 1px solid #333; padding: 10px; font-size: 16px; outline: none; }
-        #filename { background: #111; color: #0f0; border: 1px solid #333; padding: 5px; margin-bottom: 10px; width: 200px; }
-        .controls { margin-top: 10px; display: flex; gap: 10px; }
-        button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px 15px; cursor: pointer; }
-        
-        /* 3. Naming Highlight (Red Pulse) */
-        @keyframes redPulse {
-            0% { border: 1px solid #500; box-shadow: 0 0 2px #500; }
-            50% { border: 1px solid #f00; box-shadow: 0 0 10px #f00; }
-            100% { border: 1px solid #500; box-shadow: 0 0 2px #500; }
-        }
-        .pulse-active { animation: redPulse 1.5s infinite !important; }
-
-        /* Choice Toggle Styles */
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #222; border: 1px solid #0f0; transition: .4s; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: #0f0; transition: .4s; }
-        input:checked + .slider:before { transform: translateX(20px); }
+        body { background: #000; color: #0f0; font-family: monospace; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .sticky-bar { background: #0a0a0a; padding: 10px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; z-index: 10; }
+        .footer { border-top: 1px solid #333; border-bottom: none; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
+        #editor { flex: 1; width: 100%; background: #050505; color: #0f0; border: none; padding: 15px; font-size: 16px; outline: none; resize: none; overflow-y: auto; box-sizing: border-box; tab-size: 4; }
+        #filename { background: #111; color: #0f0; border: 1px solid #333; padding: 5px; width: 140px; }
+        button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px 10px; cursor: pointer; font-weight: bold; }
+        button:active { background: #0f0; color: #000; }
+        @keyframes redPulse { 0%, 100% { border-color: #500; } 50% { border-color: #f00; box-shadow: 0 0 5px #f00; } }
+        .pulse-active { animation: redPulse 1.5s infinite; }
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #222; border: 1px solid #0f0; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: #0f0; transition: .4s; }
+        input:checked + .slider:before { transform: translateX(14px); }
     </style>
 </head>
 <body>
 
-    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-        <label class="switch">
-            <input type="checkbox" id="storage-toggle">
-            <span class="slider"></span>
-        </label>
-        <span id="toggle-label" style="font-size: 12px;">PHONE</span>
-
+    <div class="sticky-bar">
+        <label class="switch"><input type="checkbox" id="storage-toggle"><span class="slider"></span></label>
+        <span id="toggle-label" style="font-size: 10px;">PHONE</span>
+        <input type="text" id="filename" placeholder="script.js">
         <select id="saved-list" style="background: #111; color: #0f0; border: 1px solid #444; flex-grow: 1;"></select>
-        
-        <button id="run-btn">RUN</button>
+        <button id="run-top">RUN</button>
     </div>
 
-    <input type="text" id="filename" placeholder="filename.txt">
-    <textarea id="editor" placeholder="Write here..."></textarea>
+    <textarea id="editor" placeholder="Write any code here..." spellcheck="false"></textarea>
 
-    <div class="controls">
-        <button onclick="handleGlobalSave()">SAVE</button>
+    <div class="sticky-bar footer">
+        <div id="stats" style="font-size: 10px; color: #444;">L: 1</div>
+        <div style="margin-left: auto; display: flex; gap: 10px;">
+            <button id="run-bottom">RUN</button>
+            <button onclick="handleGlobalSave()">SAVE</button>
+        </div>
     </div>
 
     <script>
@@ -53,75 +46,74 @@
         const storageToggle = document.getElementById('storage-toggle');
         const savedList = document.getElementById('saved-list');
 
-        // Existing Save Logic (Phone)
-        function saveFile() {
-            const text = editor.value;
-            const name = filenameInput.value || "note.txt";
-            const blob = new Blob([text], { type: "text/plain" });
-            const anchor = document.createElement("a");
-            anchor.download = name;
-            anchor.href = window.URL.createObjectURL(blob);
-            anchor.click();
-        }
-
-        /* --- New Functional Blocks Inserted Below --- */
-
-        // 3. Highlight Logic
-        function checkNaming() {
-            filenameInput.classList.toggle('pulse-active', !filenameInput.value.trim());
-        }
-        filenameInput.addEventListener('input', checkNaming);
-
-        // 1. Toggle Label
-        storageToggle.addEventListener('change', () => {
-            document.getElementById('toggle-label').innerText = storageToggle.checked ? "APP" : "PHONE";
+        // DIRECT TAB SUPPORT
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const s = editor.selectionStart;
+                editor.value = editor.value.substring(0, s) + "    " + editor.value.substring(editor.selectionEnd);
+                editor.selectionEnd = s + 4;
+            }
         });
 
-        // 4. Run Logic
-        document.getElementById('run-btn').addEventListener('click', () => {
+        // YOUR DIRECT RUN PATH
+        const triggerRun = () => {
             const blob = new Blob([editor.value], { type: 'text/html' });
             window.open(URL.createObjectURL(blob), '_blank');
-        });
+        };
+        document.getElementById('run-top').onclick = triggerRun;
+        document.getElementById('run-bottom').onclick = triggerRun;
 
-        // 2 & 5. Storage Logic
+        // UNIVERSAL EXTENSION & MIME LOGIC
+        function getMimeType(fileName) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const types = {
+                'html': 'text/html', 'htm': 'text/html',
+                'js': 'application/javascript', 'css': 'text/css',
+                'json': 'application/json', 'txt': 'text/plain',
+                'svg': 'image/svg+xml', 'xml': 'application/xml',
+                'py': 'text/x-python', 'php': 'application/x-httpd-php'
+            };
+            return types[ext] || 'text/plain';
+        }
+
         function syncHistory(name, content) {
             let history = JSON.parse(localStorage.getItem('app_history') || '[]');
-            history = [{name, content, ts: Date.now()}, ...history.filter(i => i.name !== name)];
+            history = [{name, content, ts: Date.now()}, ...history.filter(i => i.name !== name)].slice(0, 20);
             localStorage.setItem('app_history', JSON.stringify(history));
             renderHistory();
         }
 
         function renderHistory() {
             let history = JSON.parse(localStorage.getItem('app_history') || '[]');
-            savedList.innerHTML = '<option value="">-- Recent History --</option>';
-            history.forEach(item => {
-                let opt = new Option(item.name, item.name);
-                savedList.add(opt);
-            });
+            savedList.innerHTML = '<option value="">-- History (20) --</option>';
+            history.forEach(i => savedList.add(new Option(i.name, i.name)));
         }
 
-        savedList.addEventListener('change', () => {
-            let history = JSON.parse(localStorage.getItem('app_history') || '[]');
-            let entry = history.find(i => i.name === savedList.value);
-            if (entry) {
-                editor.value = entry.content;
-                filenameInput.value = entry.name;
-                checkNaming();
-            }
-        });
+        window.handleGlobalSave = () => {
+            let name = filenameInput.value.trim() || "untitled.html";
+            if (!name.includes('.')) name += ".html";
 
-        // Master Save Hook
-        window.handleGlobalSave = function() {
             if (storageToggle.checked) {
-                syncHistory(filenameInput.value || "Untitled", editor.value);
+                syncHistory(name, editor.value);
             } else {
-                saveFile();
+                const a = document.createElement("a");
+                a.download = name;
+                a.href = window.URL.createObjectURL(new Blob([editor.value], { type: getMimeType(name) }));
+                a.click();
             }
         };
 
-        // Initialize
+        // UI SYNC
+        editor.oninput = () => { document.getElementById('stats').innerText = "L: " + editor.value.split('\n').length; };
+        storageToggle.onchange = () => { document.getElementById('toggle-label').innerText = storageToggle.checked ? "APP" : "PHONE"; };
+        filenameInput.oninput = () => { filenameInput.classList.toggle('pulse-active', !filenameInput.value.trim()); };
+        savedList.onchange = () => {
+            let item = JSON.parse(localStorage.getItem('app_history')).find(i => i.name === savedList.value);
+            if (item) { editor.value = item.content; filenameInput.value = item.name; }
+        };
+
         renderHistory();
-        checkNaming();
     </script>
 </body>
 </html>
