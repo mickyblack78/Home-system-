@@ -8,7 +8,23 @@
         body { background: #000; color: #0f0; font-family: monospace; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .sticky-bar { background: #0a0a0a; padding: 10px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; z-index: 10; }
         .footer { border-top: 1px solid #333; border-bottom: none; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; }
-        #editor { flex: 1; width: 100%; background: #050505; color: #0f0; border: none; padding: 15px; font-size: 16px; outline: none; resize: none; overflow-y: auto; box-sizing: border-box; tab-size: 4; }
+        
+        /* Container for the editor and the numbers */
+        .editor-wrapper { display: flex; flex: 1; overflow: hidden; background: #050505; position: relative; }
+        
+        /* The Line Numbers Sidebar */
+        #line-numbers { 
+            width: 40px; background: #0a0a0a; color: #444; padding: 15px 5px; 
+            text-align: right; font-size: 16px; line-height: 1.5; 
+            user-select: none; border-right: 1px solid #222; overflow: hidden;
+        }
+
+        #editor { 
+            flex: 1; background: transparent; color: #0f0; border: none; 
+            padding: 15px; font-size: 16px; line-height: 1.5; outline: none; 
+            resize: none; overflow-y: auto; box-sizing: border-box; tab-size: 4; 
+        }
+
         #filename { background: #111; color: #0f0; border: 1px solid #333; padding: 5px; width: 140px; }
         button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px 10px; cursor: pointer; font-weight: bold; }
         button:active { background: #0f0; color: #000; }
@@ -17,8 +33,7 @@
         .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #222; border: 1px solid #0f0; transition: .4s; }
         .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: #0f0; transition: .4s; }
-        .input:checked + .slider:before { transform: translateX(14px);
-                                        }
+        .input:checked + .slider:before { transform: translateX(14px); }
     </style>
 </head>
 <body>
@@ -31,7 +46,10 @@
         <button id="run-top">RUN</button>
     </div>
 
-    <textarea id="editor" placeholder="Write any code here..." spellcheck="false"></textarea>
+    <div class="editor-wrapper">
+        <div id="line-numbers">1</div>
+        <textarea id="editor" placeholder="Write any code here..." spellcheck="false"></textarea>
+    </div>
 
     <div class="sticky-bar footer">
         <div id="stats" style="font-size: 10px; color: #444;">L: 1</div>
@@ -42,15 +60,23 @@
     </div>
 
     <script>
-     
-
-textarea.addEventListener('scroll', () => {
-    lineNumbers.scrollTop = textarea.scrollTop;
-});
         const editor = document.getElementById('editor');
+        const lineNumbers = document.getElementById('line-numbers');
         const filenameInput = document.getElementById('filename');
         const storageToggle = document.getElementById('storage-toggle');
         const savedList = document.getElementById('saved-list');
+
+        // Update Line Numbers on Input
+        editor.addEventListener('input', () => {
+            const lines = editor.value.split('\n').length;
+            lineNumbers.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+            document.getElementById('stats').innerText = "L: " + lines;
+        });
+
+        // Sync Scroll
+        editor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = editor.scrollTop;
+        });
         
         // DIRECT TAB SUPPORT
         editor.addEventListener('keydown', (e) => {
@@ -62,7 +88,7 @@ textarea.addEventListener('scroll', () => {
             }
         });
 
-        // YOUR DIRECT RUN PATH
+        // RUN LOGIC
         const triggerRun = () => {
             const blob = new Blob([editor.value], { type: 'text/html' });
             window.open(URL.createObjectURL(blob), '_blank');
@@ -70,7 +96,7 @@ textarea.addEventListener('scroll', () => {
         document.getElementById('run-top').onclick = triggerRun;
         document.getElementById('run-bottom').onclick = triggerRun;
 
-        // UNIVERSAL EXTENSION & MIME LOGIC
+        // MIME LOGIC
         function getMimeType(fileName) {
             const ext = fileName.split('.').pop().toLowerCase();
             const types = {
@@ -99,7 +125,6 @@ textarea.addEventListener('scroll', () => {
         window.handleGlobalSave = () => {
             let name = filenameInput.value.trim() || "untitled.html";
             if (!name.includes('.')) name += ".html";
-
             if (storageToggle.checked) {
                 syncHistory(name, editor.value);
             } else {
@@ -110,13 +135,12 @@ textarea.addEventListener('scroll', () => {
             }
         };
 
-        // UI SYNC
-        editor.oninput = () => { document.getElementById('stats').innerText = "L: " + editor.value.split('\n').length; };
         storageToggle.onchange = () => { document.getElementById('toggle-label').innerText = storageToggle.checked ? "APP" : "PHONE"; };
         filenameInput.oninput = () => { filenameInput.classList.toggle('pulse-active', !filenameInput.value.trim()); };
         savedList.onchange = () => {
-            let item = JSON.parse(localStorage.getItem('app_history')).find(i => i.name === savedList.value);
-            if (item) { editor.value = item.content; filenameInput.value = item.name; }
+            let history = JSON.parse(localStorage.getItem('app_history') || '[]');
+            let item = history.find(i => i.name === savedList.value);
+            if (item) { editor.value = item.content; filenameInput.value = item.name; editor.dispatchEvent(new Event('input')); }
         };
 
         renderHistory();
