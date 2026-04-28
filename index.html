@@ -41,11 +41,31 @@
     </div>
 
     <script>
+     .container { display: flex; }
+#line-numbers { 
+    text-align: right; 
+    padding-right: 10px; 
+    color: gray; 
+    overflow: hidden; 
+    user-select: none;
+}
+#notepad-textarea { flex-grow: 1; }   
+const textarea = document.getElementById('notepad-textarea');
+const lineNumbers = document.getElementById('line-numbers');
+
+textarea.addEventListener('input', () => {
+    const lines = textarea.value.split('\n').length;
+    lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+});
+
+textarea.addEventListener('scroll', () => {
+    lineNumbers.scrollTop = textarea.scrollTop;
+});
         const editor = document.getElementById('editor');
         const filenameInput = document.getElementById('filename');
         const storageToggle = document.getElementById('storage-toggle');
         const savedList = document.getElementById('saved-list');
-
+        
         // DIRECT TAB SUPPORT
         editor.addEventListener('keydown', (e) => {
             if (e.key === 'Tab') {
